@@ -52,7 +52,7 @@ parser.add_argument('--stop_grad', type=str2bool,
 parser.add_argument('--log', type=str2bool,
                     help='if false, do not log summaries, for debugging code.', default='True')
 parser.add_argument('--logdir', type=str, help='directory for summaries and checkpoints.',
-                    default='/opt/ml/model/')
+                    default='/opt/ml/model')
 parser.add_argument('--resume', type=str2bool, help='resume training if there is a model available', default='True')
 parser.add_argument('--train', type=str2bool, help='True to train, False to test.', default='True')
 parser.add_argument('--test_iter', type=int, help='iteration to load model (-1 for latest model)', default=-1)
@@ -156,6 +156,7 @@ def evaluate():
     iters.sort(key=lambda item: (-len(item), item))
 
     for i in iters:
+        print('Evaluating for iteration ', i)
         subprocess.run("python main.py "
                        "--datasource {} "
                        "--num_classes {} "
