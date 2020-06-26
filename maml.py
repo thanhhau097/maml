@@ -19,7 +19,7 @@ class MAML:
         """ must call construct_model() after initializing MAML! """
         self.dim_input = dim_input
         self.dim_output = dim_output
-        self.update_lr = FLAGS.update_lr
+        # self.update_lr = FLAGS.update_lr
         self.meta_lr = tf.placeholder_with_default(FLAGS.meta_lr, ())
         self.classification = False
         self.test_num_updates = test_num_updates
@@ -67,6 +67,7 @@ class MAML:
             else:
                 # Define the weights
                 self.weights = weights = self.construct_weights()
+                self.update_lr = tf.Variable(0.001, "updatelr")
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             lossesa, outputas, lossesb, outputbs = [], [], [], []
