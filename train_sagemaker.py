@@ -148,11 +148,11 @@ def train():
 def evaluate():
     # TODO: run multiple test iter
     import glob
-    model_names = glob.glob('**/*.index')
+    model_names = [os.path.basename(name) for name in glob.glob('/opt/ml/model/**/*.index')]
     iters = []
 
     for name in model_names:
-        iters.append(int(name[5:-6]))
+        iters.append(name[5:-6])
     iters.sort(key=lambda item: (-len(item), item))
 
     for i in iters:
