@@ -68,8 +68,8 @@ parser.add_argument('--train_update_lr', type=float,
                     default=-1)
 
 # ignore error:
-parser.add_argument('--model_dir', type=str, help='model_dir was automatic passed from run_sagemaker.py', default='True')
-
+parser.add_argument('--model_dir', type=str, help='model_dir was automatic passed from run_sagemaker.py',
+                    default='True')
 
 args = parser.parse_args()
 
@@ -87,7 +87,7 @@ def preprocess():
             zip_ref.extractall('./data/')
     elif args.datasource == 'miniimagenet':
         shutil.copy2(os.path.join(DATADIR, 'miniImagenet.zip'), './data/')
-        with zipfile.ZipFile('./data/omniglot_resized.zip', 'r') as zip_ref:
+        with zipfile.ZipFile('./data/miniImagenet.zip', 'r') as zip_ref:
             zip_ref.extractall('./data/')
     elif args.datasource == 'sinusoid':
         print("Sinusoid is auto generated")
@@ -146,7 +146,63 @@ def train():
 
 
 def evaluate():
-    pass
+    # TODO: run multiple test iter
+    import glob
+    model_names = glob.glob('**/*.index')
+    iters = []
+
+    for name in model_names:
+        iters.append(int(name[5:-6]))
+    iters.sort(key=lambda item: (-len(item), item))
+
+    for i in iters:
+        subprocess.run("python main.py "
+                       "--datasource {} "
+                       "--num_classes {} "
+                       "--baseline {} "
+                       "--pretrain_iterations {} "
+                       "--metatrain_iterations {} "
+                       "--meta_batch_size {} "
+                       "--meta_lr {} "
+                       "--update_batch_size {} "
+                       "--update_lr {} "
+                       "--num_updates {} "
+                       "--norm {} "
+                       "--num_filters {} "
+                       "--conv {} "
+                       "--max_pool {} "
+                       "--stop_grad {} "
+                       "--log {} "
+                       "--logdir {} "
+                       "--resume {} "
+                       "--train {} "
+                       "--test_iter {} "
+                       "--test_set {} "
+                       "--train_update_batch_size {} "
+                       "--train_update_lr {} ".format(
+            args.datasource,
+            args.num_classes,
+            args.baseline,
+            args.pretrain_iterations,
+            args.metatrain_iterations,
+            args.meta_batch_size,
+            args.meta_lr,
+            args.update_batch_size,
+            args.update_lr,
+            args.num_updates,
+            args.norm,
+            args.num_filters,
+            args.conv,
+            args.max_pool,
+            args.stop_grad,
+            args.log,
+            args.logdir,
+            args.resume,
+            'False',
+            i,
+            'True',
+            args.train_update_batch_size,
+            args.train_update_lr), shell=True)
 
 
 def main():
