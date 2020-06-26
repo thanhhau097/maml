@@ -212,6 +212,8 @@ def main():
     preprocess()
     print("training")
     train()
+    print("evaluating")
+    evaluate()
 
 
 main()
