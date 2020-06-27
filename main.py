@@ -329,7 +329,7 @@ def main():
     tf.global_variables_initializer().run()
     tf.train.start_queue_runners()
 
-    if FLAGS.resume or not FLAGS.train:
+    if FLAGS.resume or not FLAGS.train:  # resume or test
         model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
         if FLAGS.test_iter > 0:
             model_file = model_file[:model_file.index('model')] + 'model' + str(FLAGS.test_iter)
@@ -342,7 +342,14 @@ def main():
     if FLAGS.train:
         train(model, saver, sess, exp_string, data_generator, resume_itr)
     else:
-        test(model, saver, sess, exp_string, data_generator, test_num_updates)
+        iters = str(FLAGS.test_iter).split(',')
+        for iter in iters:
+            model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
+            if FLAGS.test_iter > 0:
+                model_file = model_file[:model_file.index('model')] + 'model' + str(iter)
+            print("Restoring model weights from " + model_file)
+            saver.restore(sess, model_file)
+            test(model, saver, sess, exp_string, data_generator, test_num_updates)
 
 if __name__ == "__main__":
     main()
