@@ -67,7 +67,7 @@ class MAML:
             else:
                 # Define the weights
                 self.weights = weights = self.construct_weights()
-                self.update_lr = tf.Variable(0.001, "updatelr")
+                self.update_lr = tf.Variable(0.001, type=tf.float32, name="updatelr")
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             lossesa, outputas, lossesb, outputbs = [], [], [], []
