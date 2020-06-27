@@ -49,19 +49,25 @@ class MAML:
 
     def construct_optimizer(self):
         """
-        Build an optimizer, the output must be able to multiply with gradients,
-        and return a tensor have same shape with gradients. So, the optimizer could output tensor: a number/ a vector have
-        same shape with gradients -> element-wise multiply/ matrix.
-
-        Weights have shape (N x 1) -> matrix have shape (N x N)
-
-        Or in paper Meta-Curvature, the author use gradients as input, then use small number of parameters. By doing
-        this way, the gradients' elements can multiply together without requiring new parameters.
+        Approach 1: 
+            Build an optimizer, the output must be able to multiply with gradients,
+            and return a tensor have same shape with gradients. So, the optimizer could output tensor: a number/ a vector have
+            same shape with gradients -> element-wise multiply/ matrix.
+    
+            Weights have shape (N x 1) -> matrix have shape (N x N)
+        Approach 2:
+            Take gradient as input, then output the function with gradient.
+            Or in paper Meta-Curvature, the author use gradients as input, then use small number of parameters. By doing
+            this way, the gradients' elements can multiply together without requiring new parameters.
 
         ### IDEA
         - Multiple 1D dilated CNN
         -
+        
+        inputs: gradients
+        outputs: ?
         """
+        # self.weights
         return tf.Variable(0.001, name="updatelr")
 
     def construct_model(self, input_tensors=None, prefix='metatrain_'):
