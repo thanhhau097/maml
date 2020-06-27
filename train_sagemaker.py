@@ -148,7 +148,7 @@ def train():
 def evaluate():
     # TODO: run multiple test iter
     import glob
-    model_names = [os.path.basename(name) for name in glob.glob('/opt/ml/model/**/*.index')]
+    model_names = [os.path.basename(name) for name in glob.glob(os.path.join(args.logdir, '**/*.index'))]
     iters = []
 
     for name in model_names:
