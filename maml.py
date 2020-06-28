@@ -47,7 +47,26 @@ class MAML:
         else:
             raise ValueError('Unrecognized data source.')
 
-    def construct_optimizer(self):
+    def conv3d_block(self, inp, cweight, bweight, reuse, scope, activation=tf.nn.relu, max_pool_pad='SAME', residual=False):
+        """ Perform, conv, batch norm, nonlinearity, and max pool """
+        stride, no_stride = [1, 2, 2, 2, 1], [1, 1, 1, 1, 1]
+
+        conv_output = tf.nn.conv3d(inp, cweight, no_stride, 'SAME') + bweight
+
+        return conv_output
+
+    # def conv_optimizer_block(self, inp, reuse=True, scope='optimizer'):
+    #     dtype = tf.float32
+    #     conv_initializer = tf.contrib.layers.xavier_initializer(dtype=dtype)
+    #     fc_initializer = tf.contrib.layers.xavier_initializer(dtype=dtype)
+    #     k = 3
+    #     # get shape from self.weights or inp
+    #     cweight = tf.get_variable('conv1', [k, k, k, k, k],
+    #                                        initializer=conv_initializer, dtype=dtype)
+    #     bweight = tf.Variable(tf.zeros([self.dim_hidden]))
+    #     hidden1 = self.conv3d_block(inp, cweight, bweight, reuse, scope + '0')
+
+    def  construct_optimizer(self):
         """
         Approach 1: 
             Build an optimizer, the output must be able to multiply with gradients,
@@ -67,8 +86,58 @@ class MAML:
         inputs: gradients
         outputs: ?
         """
-        # self.weights
-        return tf.Variable(0.001, name="updatelr")
+        optimizer = {}
+        dtype = tf.float32
+        conv_initializer = tf.contrib.layers.xavier_initializer(dtype=dtype)
+        fc_initializer = tf.contrib.layers.xavier_initializer(dtype=dtype)
+        k = 3
+
+        for key in self.weights.keys():
+            if key.startswith('conv'):
+                optimizer[key] = tf.get_variable('optimizer_' + key, [k, k, k, k, k],
+                                                 initializer=conv_initializer, dtype=dtype)
+            elif key.startswith('b5'):
+                shape = self.weights['w5'].shape
+                optimizer['b5'] = tf.Variable(tf.zeros([shape[0] * shape[1]]), name='optimizer_b5')
+            elif key.startswith('b'):
+                optimizer[key] = tf.Variable(tf.zeros([k]))
+            elif key.startswith('w'):
+                shape = self.weights[key].shape
+                optimizer[key] = tf.get_variable('optimizer_' + key,
+                                                 [shape[0] * shape[1], shape[0] * shape[1]], initializer=fc_initializer)
+
+        return optimizer
+
+    def optimize(self, weights, gradients, reuse=True, scope='optimizer'):
+        updated_weights = {}
+
+        output1 = self.conv3d_block(tf.transpose(tf.stack([gradients['conv1']]), perm=[0, 2, 3, 4, 1]), self.optimizer['conv1'], self.optimizer['b1'],
+                                     reuse=False, scope=scope+'0')
+        updated_weights['conv1'] = weights['conv1'] - tf.transpose(output1[0], perm=[3, 0, 1, 2])
+        updated_weights['b1'] = weights['b1'] - 0.001*gradients['b1']
+
+        output2 = self.conv3d_block(tf.transpose(tf.stack([gradients['conv2']]), perm=[0, 2, 3, 4, 1]), self.optimizer['conv2'], self.optimizer['b2'],
+                                     reuse=False, scope=scope+'1')
+        updated_weights['conv2'] = weights['conv2'] - tf.transpose(output2[0], perm=[3, 0, 1, 2])
+        updated_weights['b2'] = weights['b2'] - 0.001*gradients['b2']
+
+        output3 = self.conv3d_block(tf.transpose(tf.stack([gradients['conv3']]), perm=[0, 2, 3, 4, 1]), self.optimizer['conv3'], self.optimizer['b3'],
+                                     reuse=False, scope=scope+'2')
+        updated_weights['conv3'] = weights['conv3'] - tf.transpose(output3[0], perm=[3, 0, 1, 2])
+        updated_weights['b3'] = weights['b3'] - 0.001*gradients['b3']
+
+        output4 = self.conv3d_block(tf.transpose(tf.stack([gradients['conv4']]), perm=[0, 2, 3, 4, 1]), self.optimizer['conv4'], self.optimizer['b4'],
+                                     reuse=False, scope=scope+'3')
+        updated_weights['conv4'] = weights['conv4'] - tf.transpose(output4[0], perm=[3, 0, 1, 2])
+        updated_weights['b4'] = weights['b4'] - 0.001*gradients['b4']
+
+        output5 = tf.reshape(gradients['w5'], [-1, np.prod([int(dim) for dim in gradients['w5'].get_shape()[1:]])])
+        output5 = tf.multiply(output5, weights['w5']) + weights['b5']
+        updated_weights['w5'] = weights['w5'] - output5
+        updated_weights['b5'] = weights['b5'] - 0.001*gradients['b5']
+        # TODO: how to update b1, b2, b3, b4, b5
+
+        return list(updated_weights.values())
 
     def construct_model(self, input_tensors=None, prefix='metatrain_'):
         # a: training data for inner gradient, b: test data for meta gradient
@@ -80,6 +149,7 @@ class MAML:
         else:
             self.inputa = input_tensors['inputa']
             self.inputb = input_tensors['inputb']
+            self.inputb = input_tensors['inputb']
             self.labela = input_tensors['labela']
             self.labelb = input_tensors['labelb']
 
@@ -90,7 +160,7 @@ class MAML:
             else:
                 # Define the weights
                 self.weights = weights = self.construct_weights()
-                self.update_lr = self.construct_optimizer()
+                self.optimizer = self.construct_optimizer()
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             lossesa, outputas, lossesb, outputbs = [], [], [], []
@@ -115,7 +185,8 @@ class MAML:
                 if FLAGS.stop_grad:
                     grads = [tf.stop_gradient(grad) for grad in grads]
                 gradients = dict(zip(weights.keys(), grads))
-                fast_weights = dict(zip(weights.keys(), [weights[key] - self.update_lr*gradients[key] for key in weights.keys()]))
+                updated_weights = self.optimize(weights, gradients)
+                fast_weights = dict(zip(weights.keys(), updated_weights)) # [weights[key] - self.update_lr*gradients[key] for key in weights.keys()]
                 output = self.forward(inputb, fast_weights, reuse=True)
                 task_outputbs.append(output)
                 task_lossesb.append(self.loss_func(output, labelb))
@@ -126,7 +197,8 @@ class MAML:
                     if FLAGS.stop_grad:
                         grads = [tf.stop_gradient(grad) for grad in grads]
                     gradients = dict(zip(fast_weights.keys(), grads))
-                    fast_weights = dict(zip(fast_weights.keys(), [fast_weights[key] - self.update_lr*gradients[key] for key in fast_weights.keys()]))
+                    updated_weights = self.optimize(fast_weights, gradients)
+                    fast_weights = dict(zip(fast_weights.keys(), updated_weights)) # [fast_weights[key] - self.update_lr*gradients[key] for key in fast_weights.keys()]
                     output = self.forward(inputb, fast_weights, reuse=True)
                     task_outputbs.append(output)
                     task_lossesb.append(self.loss_func(output, labelb))
