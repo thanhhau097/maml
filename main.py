@@ -157,7 +157,7 @@ def train(model, saver, sess, exp_string, data_generator, resume_itr=0):
             result = sess.run(input_tensors, feed_dict)
             print('Validation results: ' + str(result[0]) + ', ' + str(result[1]))
 
-    saver.save(sess, FLAGS.logdir + '/' + exp_string +  '/model' + str(itr))
+    saver.save(sess, FLAGS.logdir + '/' + exp_string +  '/model' + str  (itr))
 
 # calculated for omniglot
 NUM_TEST_POINTS = 600
@@ -215,6 +215,8 @@ def test(model, saver, sess, exp_string, data_generator, test_num_updates=None):
         writer.writerow(ci95)
 
 def main():
+    print('FLAGS')
+    print(FLAGS)
     if FLAGS.datasource == 'sinusoid':
         if FLAGS.train:
             test_num_updates = 5
@@ -331,8 +333,9 @@ def main():
 
     if FLAGS.resume or not FLAGS.train:  # resume or test
         model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
-        if FLAGS.test_iter > 0:
-            model_file = model_file[:model_file.index('model')] + 'model' + str(FLAGS.test_iter)
+        iter = int(str(FLAGS.test_iter).split(',')[0])
+        if iter > 0:
+            model_file = model_file[:model_file.index('model')] + 'model' + str(iter)
         if model_file:
             ind1 = model_file.index('model')
             resume_itr = int(model_file[ind1+5:])
@@ -344,12 +347,14 @@ def main():
     else:
         iters = str(FLAGS.test_iter).split(',')
         for iter in iters:
-            model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
-            if FLAGS.test_iter > 0:
+            try:
+                model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
                 model_file = model_file[:model_file.index('model')] + 'model' + str(iter)
-            print("Restoring model weights from " + model_file)
-            saver.restore(sess, model_file)
-            test(model, saver, sess, exp_string, data_generator, test_num_updates)
+                print("Restoring model weights from " + model_file)
+                saver.restore(sess, model_file)
+                test(model, saver, sess, exp_string, data_generator, test_num_updates)
+            except:
+                print("Cannot test with iter", iters)
 
 if __name__ == "__main__":
     main()

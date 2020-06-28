@@ -97,29 +97,29 @@ def preprocess():
 
 def train():
     subprocess.run("python main.py "
-                   "--datasource {} "
-                   "--num_classes {} "
-                   "--baseline {} "
-                   "--pretrain_iterations {} "
-                   "--metatrain_iterations {} "
-                   "--meta_batch_size {} "
-                   "--meta_lr {} "
-                   "--update_batch_size {} "
-                   "--update_lr {} "
-                   "--num_updates {} "
-                   "--norm {} "
-                   "--num_filters {} "
-                   "--conv {} "
-                   "--max_pool {} "
-                   "--stop_grad {} "
-                   "--log {} "
-                   "--logdir {} "
-                   "--resume {} "
-                   "--train {} "
-                   "--test_iter {} "
-                   "--test_set {} "
-                   "--train_update_batch_size {} "
-                   "--train_update_lr {} ".format(
+                   "--datasource={} "
+                   "--num_classes={} "
+                   "--baseline={} "
+                   "--pretrain_iterations={} "
+                   "--metatrain_iterations={} "
+                   "--meta_batch_size={} "
+                   "--meta_lr={} "
+                   "--update_batch_size={} "
+                   "--update_lr={} "
+                   "--num_updates={} "
+                   "--norm={} "
+                   "--num_filters={} "
+                   "--conv={} "
+                   "--max_pool={} "
+                   "--stop_grad={} "
+                   "--log={} "
+                   "--logdir={} "
+                   "--resume={} "
+                   "--train={} "
+                   "--test_iter={} "
+                   "--test_set={} "
+                   "--train_update_batch_size={} "
+                   "--train_update_lr={} ".format(
         args.datasource,
         args.num_classes,
         args.baseline,
@@ -158,29 +158,29 @@ def evaluate():
 
     print('Evaluating')
     subprocess.run("python main.py "
-                   "--datasource {} "
-                   "--num_classes {} "
-                   "--baseline {} "
-                   "--pretrain_iterations {} "
-                   "--metatrain_iterations {} "
-                   "--meta_batch_size {} "
-                   "--meta_lr {} "
-                   "--update_batch_size {} "
-                   "--update_lr {} "
-                   "--num_updates {} "
-                   "--norm {} "
-                   "--num_filters {} "
-                   "--conv {} "
-                   "--max_pool {} "
-                   "--stop_grad {} "
-                   "--log {} "
-                   "--logdir {} "
-                   "--resume {} "
-                   "--train {} "
-                   "--test_iter {} "
-                   "--test_set {} "
-                   "--train_update_batch_size {} "
-                   "--train_update_lr {} ".format(
+                   "--datasource={} "
+                   "--num_classes={} "
+                   "--baseline={} "
+                   "--pretrain_iterations={} "
+                   "--metatrain_iterations={} "
+                   "--meta_batch_size={} "
+                   "--meta_lr={} "
+                   "--update_batch_size={} "
+                   "--update_lr={} "
+                   "--num_updates={} "
+                   "--norm={} "
+                   "--num_filters={} "
+                   "--conv={} "
+                   "--max_pool={} "
+                   "--stop_grad={} "
+                   "--log={} "
+                   "--logdir={} "
+                   "--resume={} "
+                   "--train=False "
+                   "--test_iter={} "
+                   "--test_set=True "
+                   "--train_update_batch_size={} "
+                   "--train_update_lr={} ".format(
         args.datasource,
         args.num_classes,
         args.baseline,
@@ -199,9 +199,7 @@ def evaluate():
         args.log,
         args.logdir,
         args.resume,
-        'False',
         iters,
-        'True',
         args.train_update_batch_size,
         args.train_update_lr), shell=True)
 
@@ -215,6 +213,6 @@ def main():
     print("evaluating")
     evaluate()
 
-    subprocess.run("mv {} /opt/ml/model/result".format(args.logdir), shell=True)
+    # subprocess.run("mv {}/* /opt/ml/model/".format(args.logdir), shell=True)
 
 main()
