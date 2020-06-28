@@ -332,16 +332,19 @@ def main():
     tf.train.start_queue_runners()
 
     if FLAGS.resume or not FLAGS.train:  # resume or test
-        model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
-        iter = int(str(FLAGS.test_iter).split(',')[0])
-        if iter > 0:
-            model_file = model_file[:model_file.index('model')] + 'model' + str(iter)
-        if model_file:
-            ind1 = model_file.index('model')
-            resume_itr = int(model_file[ind1+5:])
-            print("Restoring model weights from " + model_file)
-            saver.restore(sess, model_file)
-
+        try:
+            print("LOADING FLAGS.test_iter", FLAGS.test_iter)
+            model_file = tf.train.latest_checkpoint(FLAGS.logdir + '/' + exp_string)
+            iter = int(str(FLAGS.test_iter).split(',')[0])
+            if iter > 0:
+                model_file = model_file[:model_file.index('model')] + 'model' + str(iter)
+            if model_file:
+                ind1 = model_file.index('model')
+                resume_itr = int(model_file[ind1+5:])
+                print("Restoring model weights from " + model_file)
+                saver.restore(sess, model_file)
+        except:
+            print("Could not load FLAGS.test_iter", FLAGS.test_iter)
     if FLAGS.train:
         train(model, saver, sess, exp_string, data_generator, resume_itr)
     else:
